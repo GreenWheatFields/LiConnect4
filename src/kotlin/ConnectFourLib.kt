@@ -50,6 +50,7 @@ class ConnectFour {
         }
         fun checkForWin(){
             //this should adapt to varying win conditions. ex 4 in a row. 8 in a row etc
+            //todo, addidtion, subtraction
         }
         fun isLegalStartPos(pos: Int): Boolean{
             return pos < colums
@@ -69,7 +70,7 @@ class ConnectFour {
 fun main() {
     val game = ConnectFour.initGame(7,6)
     repeat(10){
-        game.pushMove(5)
+        game.pushMove(0)
     }
 
 }
