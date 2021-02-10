@@ -1,6 +1,9 @@
+import kotlin.random.Random
+
 val YELLOW_PIECE: Byte = 1
 val RED_PIECE: Byte = 2
-
+val ZERO: Byte = 0
+val WIN_CONDITION = 3 // 4 including the cell looking from
 class ConnectFour {
     // [0, 0, 0]
     // [0, 0, 0]
@@ -35,7 +38,7 @@ class ConnectFour {
                     if (board[posistion] == YELLOW_PIECE || board[posistion] == RED_PIECE){
                         if ((posistion - colums) < 0) return
                         board[posistion - colums] = color
-                        printBoard()
+                        checkForWin()
                         return
                     }else if (posistion > LAST_ROW){
                         if (posistion == SQUARES){ // catches startPos = 0
@@ -48,9 +51,38 @@ class ConnectFour {
                 }
             }
         }
-        fun checkForWin(){
+        private fun getRow(cell: Int): Int{
+            return ((cell/ colums) + 1) * colums - 1
+        }
+        private fun getSum(cells:Array<Int>): Int{
+            var sum = 0
+            for (cell in cells){
+                if (board[cell] == ZERO) return -1 //todo, check if cell == opposiing color
+                sum += board[cell]
+            }
+            return sum
+        }
+
+        private fun checkForWin(){
+            fun checkHorz(cell: Int): Boolean{
+                if (cell + WIN_CONDITION <= getRow(cell)){
+                    println(getSum(arrayOf(cell, cell + 1, cell + 2)))
+                    //sum right values
+                }
+                if (cell - WIN_CONDITION > getRow(cell) - colums){
+                    getSum(arrayOf(cell, cell - 1, cell - 2))
+                }
+                return false
+            }
+            for (cell in board.indices){
+                if (board[cell] != ZERO){
+                    if (checkHorz(cell)){
+                        ;
+                    }
+                }
+            }
+            printBoard()
             //this should adapt to varying win conditions. ex 4 in a row. 8 in a row etc
-            //todo, addidtion, subtraction
         }
         fun isLegalStartPos(pos: Int): Boolean{
             return pos < colums
@@ -68,9 +100,9 @@ class ConnectFour {
     }
 }
 fun main() {
-    val game = ConnectFour.initGame(7,6)
-    repeat(10){
-        game.pushMove(0)
-    }
+    val game = ConnectFour.initGame(6,7)
+//    repeat(10){
+//        game.pushMove(3)
+//    }
 
 }
