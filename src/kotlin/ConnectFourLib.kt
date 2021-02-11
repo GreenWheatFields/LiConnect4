@@ -75,13 +75,38 @@ class ConnectFour {
             printBoard()
             fun checkHorz(cell: Int): Boolean{
                 if (cell + WIN_CONDITION <= getRow(cell)){
-
-                    if(checkSum(getSum((cell..cell + WIN_CONDITION).toList()), color))
-                        return true
+                    if(checkSum(getSum((cell..cell + WIN_CONDITION).toList()), color)) return true
                 }
                 if (cell - WIN_CONDITION > getRow(cell) - colums){
-                    if(checkSum(getSum(((cell downTo cell - WIN_CONDITION).toList())), color))
-                        return true
+                    if(checkSum(getSum(((cell downTo cell - WIN_CONDITION).toList())), color)) return true
+                }
+                return false
+            }
+            fun checkVert(cell: Int): Boolean{
+                if (cell + (colums * WIN_CONDITION) < SQUARES){
+                    if(checkSum(getSum((cell..(cell + WIN_CONDITION * colums) step colums).toList()), color)) return true
+                }
+                if (cell - (colums * WIN_CONDITION) >= 0){
+                    if(checkSum(getSum((cell downTo (cell - WIN_CONDITION * colums) step colums).toList()), color)) return true
+                }
+                return false
+            }
+            fun checkDiagonal(cell: Int): Boolean{
+                //check if at leat two cells in any diagonal direction
+//                if (cell )
+                if (cell < SQUARES / 2) {
+                    if (cell + WIN_CONDITION <= getRow(cell)) {
+                        //digaonally down to the right
+                        if(checkSum(getSum((cell..cell + (WIN_CONDITION * colums + WIN_CONDITION) step colums + 1).toList()), color)){
+                            return true
+                        }
+                    }
+                    if (cell - WIN_CONDITION >= getRow(cell) - colums) {
+                        println(getSum((cell..cell + (WIN_CONDITION * colums - WIN_CONDITION) step colums - 1).toList()))
+                        if(checkSum(getSum((cell..cell + (WIN_CONDITION * colums - WIN_CONDITION) step colums - 1).toList()), color)){
+                            return true
+                        }
+                    }
                 }
                 return false
             }
@@ -90,6 +115,12 @@ class ConnectFour {
                     if (checkHorz(cell)){
                         println("winner")
                         exitProcess(0)
+                    }else if (checkVert(cell)){
+                        println("winner1")
+                        exitProcess(0)
+                    }else if (checkDiagonal(cell)){
+                        println("diagonal")
+                        exitProcess(1)
                     }
                 }
             }
@@ -101,8 +132,9 @@ class ConnectFour {
         fun printBoard(){
             board.forEachIndexed { index, byte ->
                 if (index % colums == 0){
-                    print("\n" + byte)
+                    print("\n " + byte)
                 }else{
+                    print(" ")
                     print(byte)
                 }
             }
@@ -119,10 +151,17 @@ fun fillHorizontal(range: IntProgression): ArrayList<Int> {
     return commands
 }
 fun main() {
-    val game = ConnectFour.initGame(6,7)
-    var instructions = fillHorizontal(6 downTo 2)
-    for (startPos in instructions){
-        game.pushMove(startPos)
+    val game = ConnectFour.initGame(6, 7)
+    game.pushMove(0)
+    repeat(2) {
+        game.pushMove(1)
     }
-
+    repeat(2) {
+        game.pushMove(2)
+    }
+    game.pushMove(0)
+    game.pushMove(2)
+    repeat(4){
+        game.pushMove(3)
+    }
 }
