@@ -1,4 +1,5 @@
 import kotlin.random.Random
+import kotlin.system.exitProcess
 
 val YELLOW_PIECE: Byte = 1
 val RED_PIECE: Byte = 2
@@ -15,10 +16,12 @@ class ConnectFour {
         }
     }
     class Game(val board: Board){
+        //todo, handling of turns is weird
         var turn: Boolean = false
         fun pushMove(pos: Int){
             if (board.isLegalStartPos(pos)){
                 board.putMove(pos, if (!turn) YELLOW_PIECE else RED_PIECE)
+                board.checkForWin(if (!turn) YELLOW_PIECE else RED_PIECE)
                 turn = !turn
             }else{
                 println("illegal start")
@@ -41,7 +44,6 @@ class ConnectFour {
                     if (board[posistion] == YELLOW_PIECE || board[posistion] == RED_PIECE){
                         if ((posistion - colums) < 0) return
                         board[posistion - colums] = color
-                        checkForWin()
                         return
                     }else if (posistion > LAST_ROW){
                         if (posistion == SQUARES){ // catches startPos = 0
@@ -65,32 +67,32 @@ class ConnectFour {
             }
             return sum
         }
-        private fun checkSum(sum: Int){
-//            return if (color == YELLOW_PIECE)
+        private fun checkSum(sum: Int, color: Byte): Boolean {
+            return if (color == YELLOW_PIECE) sum == ((WIN_CONDITION + 1) * YELLOW_PIECE) else sum == ((WIN_CONDITION + 1) * RED_PIECE)
         }
 
-        private fun checkForWin(){
+        fun checkForWin(color: Byte){
+            printBoard()
             fun checkHorz(cell: Int): Boolean{
-                println()
                 if (cell + WIN_CONDITION <= getRow(cell)){
-//                    println("right")
-//                    println(getSum((cell..(cell + WIN_CONDITION)).toList()))
-                    //sum right values
+
+                    if(checkSum(getSum((cell..cell + WIN_CONDITION).toList()), color))
+                        return true
                 }
                 if (cell - WIN_CONDITION > getRow(cell) - colums){
-//                    println("left")
-//                    getSum(((cell - WIN_CONDITION)..cell).toList())
+                    if(checkSum(getSum(((cell downTo cell - WIN_CONDITION).toList())), color))
+                        return true
                 }
                 return false
             }
             for (cell in board.indices){
                 if (board[cell] != ZERO){
                     if (checkHorz(cell)){
-                        ;
+                        println("winner")
+                        exitProcess(0)
                     }
                 }
             }
-            printBoard()
             //this should adapt to varying win conditions. ex 4 in a row. 8 in a row etc
         }
         fun isLegalStartPos(pos: Int): Boolean{
@@ -108,9 +110,9 @@ class ConnectFour {
         }
     }
 }
-fun fillHorizontal(startColumn: Int = 0): ArrayList<Int> {
+fun fillHorizontal(range: IntProgression): ArrayList<Int> {
     val commands = ArrayList<Int>()
-    for (i in startColumn..WIN_CONDITION){
+    for (i in range){
         commands.add(i)
         commands.add(i)
     }
@@ -118,7 +120,7 @@ fun fillHorizontal(startColumn: Int = 0): ArrayList<Int> {
 }
 fun main() {
     val game = ConnectFour.initGame(6,7)
-    var instructions = fillHorizontal()
+    var instructions = fillHorizontal(6 downTo 2)
     for (startPos in instructions){
         game.pushMove(startPos)
     }
