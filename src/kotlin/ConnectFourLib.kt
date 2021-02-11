@@ -10,6 +10,7 @@ class ConnectFour {
     // [0, 0, 0]
     companion object{
         fun initGame(rows: Int, colums: Int): Game{
+            //generate win conditions, check if board size is legal/possible. choose turn
             return Game(Board(rows, colums))
         }
     }
@@ -18,7 +19,6 @@ class ConnectFour {
         fun pushMove(pos: Int){
             if (board.isLegalStartPos(pos)){
                 board.putMove(pos, if (!turn) YELLOW_PIECE else RED_PIECE)
-
                 turn = !turn
             }else{
                 println("illegal start")
@@ -26,9 +26,12 @@ class ConnectFour {
         }
     }
     class Board(val rows: Int, val colums: Int){
-        private val board = ByteArray(rows * colums)
+        private var board: ByteArray = ByteArray(rows * colums)
         private val LAST_ROW = ((rows * colums) - (colums + 1))
         private val SQUARES = rows * colums
+        fun overrideBoard(newBoard: ByteArray){
+            board = newBoard
+        }
 
         fun putMove(droppingFrom: Int, color: Byte){
             if (droppingFrom > colums){
@@ -54,7 +57,7 @@ class ConnectFour {
         private fun getRow(cell: Int): Int{
             return ((cell/ colums) + 1) * colums - 1
         }
-        private fun getSum(cells:Array<Int>): Int{
+        private fun getSum(cells:List<Int>): Int{
             var sum = 0
             for (cell in cells){
                 if (board[cell] == ZERO) return -1 //todo, check if cell == opposiing color
@@ -62,15 +65,21 @@ class ConnectFour {
             }
             return sum
         }
+        private fun checkSum(sum: Int){
+//            return if (color == YELLOW_PIECE)
+        }
 
         private fun checkForWin(){
             fun checkHorz(cell: Int): Boolean{
+                println()
                 if (cell + WIN_CONDITION <= getRow(cell)){
-                    println(getSum(arrayOf(cell, cell + 1, cell + 2)))
+//                    println("right")
+//                    println(getSum((cell..(cell + WIN_CONDITION)).toList()))
                     //sum right values
                 }
                 if (cell - WIN_CONDITION > getRow(cell) - colums){
-                    getSum(arrayOf(cell, cell - 1, cell - 2))
+//                    println("left")
+//                    getSum(((cell - WIN_CONDITION)..cell).toList())
                 }
                 return false
             }
@@ -99,10 +108,19 @@ class ConnectFour {
         }
     }
 }
+fun fillHorizontal(startColumn: Int = 0): ArrayList<Int> {
+    val commands = ArrayList<Int>()
+    for (i in startColumn..WIN_CONDITION){
+        commands.add(i)
+        commands.add(i)
+    }
+    return commands
+}
 fun main() {
     val game = ConnectFour.initGame(6,7)
-//    repeat(10){
-//        game.pushMove(3)
-//    }
+    var instructions = fillHorizontal()
+    for (startPos in instructions){
+        game.pushMove(startPos)
+    }
 
 }
