@@ -1,3 +1,5 @@
+import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.random.Random
 import kotlin.system.exitProcess
 
@@ -18,14 +20,37 @@ class ConnectFour {
     class Game(val board: Board){
         //todo, handling of turns is weird
         var turn: Boolean = false
-        fun pushMove(pos: Int){
+        fun pushMove(pos: Int): Boolean{
             if (board.isLegalStartPos(pos)){
                 board.putMove(pos, if (!turn) YELLOW_PIECE else RED_PIECE)
-                board.checkForWin(if (!turn) YELLOW_PIECE else RED_PIECE)
-                turn = !turn
+                return board.checkForWin(if (!turn) YELLOW_PIECE else RED_PIECE)
             }else{
                 println("illegal start")
+                return false
             }
+        }
+        fun startGame(){
+            while (true){
+                board.printBoard()
+                val input = Scanner(System.`in`)
+                val move = input.nextInt()
+                if(pushMove(move)){
+                    println("play again?")
+                    var decision = input.nextInt()
+                    if (decision == 1){
+                        reset()
+                        startGame()
+                    }
+                    exitProcess(0)
+                }else{
+                    turn = !turn
+                }
+
+            }
+        }
+        fun reset(){
+            turn = true
+            board.clearBoard()
         }
     }
     class Board(val rows: Int, val colums: Int){
@@ -34,6 +59,11 @@ class ConnectFour {
         private val SQUARES = rows * colums
         fun overrideBoard(newBoard: ByteArray){
             board = newBoard
+        }
+        fun clearBoard(){
+            for (cell in board.indices){
+                board[cell] = ZERO
+            }
         }
 
         fun putMove(droppingFrom: Int, color: Byte){
@@ -71,7 +101,7 @@ class ConnectFour {
             return if (color == YELLOW_PIECE) sum == ((WIN_CONDITION + 1) * YELLOW_PIECE) else sum == ((WIN_CONDITION + 1) * RED_PIECE)
         }
 
-        fun checkForWin(color: Byte){
+        fun checkForWin(color: Byte): Boolean {
             printBoard()
             fun checkHorz(cell: Int): Boolean{
                 if (cell + WIN_CONDITION <= getRow(cell)){
@@ -113,17 +143,18 @@ class ConnectFour {
             for (cell in board.indices){
                 if (board[cell] != ZERO){
                     if (checkHorz(cell)){
-                        println("winner")
-                        exitProcess(0)
+                        println("horizontal Win")
+                        return true
                     }else if (checkVert(cell)){
-                        println("winner1")
-                        exitProcess(0)
+                        println("vertical win")
+                        return true
                     }else if (checkDiagonal(cell)){
-                        println("diagonal")
-                        exitProcess(1)
+                        println("diagonal win")
+                        return true
                     }
                 }
             }
+            return false
             //this should adapt to varying win conditions. ex 4 in a row. 8 in a row etc
         }
         fun isLegalStartPos(pos: Int): Boolean{
@@ -152,16 +183,5 @@ fun fillHorizontal(range: IntProgression): ArrayList<Int> {
 }
 fun main() {
     val game = ConnectFour.initGame(6, 7)
-    game.pushMove(0)
-    repeat(2) {
-        game.pushMove(1)
-    }
-    repeat(2) {
-        game.pushMove(2)
-    }
-    game.pushMove(0)
-    game.pushMove(2)
-    repeat(4){
-        game.pushMove(3)
-    }
+    game.startGame()
 }
