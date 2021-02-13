@@ -31,6 +31,7 @@ class Game(val board: Board){
     fun startGame(){
         while (true){
             board.printBoard()
+            board.genLegalMoves().forEach { i: Int -> println(i)  }
             val input = Scanner(System.`in`)
             val move = input.nextInt()
             if(pushMove(move)){
@@ -53,9 +54,11 @@ class Game(val board: Board){
     }
 }
 class Board(val rows: Int, val colums: Int){
+    //todo, detect draw
     private var board: ByteArray = ByteArray(rows * colums)
     private val LAST_ROW = ((rows * colums) - (colums + 1))
     private val SQUARES = rows * colums
+    val legalMoves = (0 until colums).toMutableList()
     fun overrideBoard(newBoard: ByteArray){
         board = newBoard
     }
@@ -63,6 +66,18 @@ class Board(val rows: Int, val colums: Int){
         for (cell in board.indices){
             board[cell] = ZERO
         }
+    }
+    fun genLegalMoves(): MutableList<Int> {
+        var temp = -1
+        for (startPos in legalMoves){
+            if (board[startPos] != ZERO){
+                temp = startPos
+            }
+        }
+        if (temp != -1){
+            legalMoves.remove(temp)
+        }
+        return legalMoves
     }
 
     fun putMove(droppingFrom: Int, color: Byte){
@@ -73,6 +88,7 @@ class Board(val rows: Int, val colums: Int){
                 if (board[posistion] == YELLOW_PIECE || board[posistion] == RED_PIECE){
                     if ((posistion - colums) < 0) return
                     board[posistion - colums] = color
+                    if (posistion < colums) genLegalMoves()
                     return
                 }else if (posistion > LAST_ROW){
                     if (posistion == SQUARES){ // catches startPos = 0
@@ -101,7 +117,7 @@ class Board(val rows: Int, val colums: Int){
     }
 
     fun checkForWin(color: Byte): Boolean {
-        printBoard()
+//        printBoard()
         fun checkHorz(cell: Int): Boolean{
             if (cell + WIN_CONDITION <= getRow(cell)){
                 if(checkSum(getSum((cell..cell + WIN_CONDITION).toList()), color)) return true
@@ -131,13 +147,21 @@ class Board(val rows: Int, val colums: Int){
                     }
                 }
                 if (cell - WIN_CONDITION >= getRow(cell) - colums) {
-                    println(getSum((cell..cell + (WIN_CONDITION * colums - WIN_CONDITION) step colums - 1).toList()))
                     if(checkSum(getSum((cell..cell + (WIN_CONDITION * colums - WIN_CONDITION) step colums - 1).toList()), color)){
                         return true
                     }
                 }
             }
             return false
+        }
+        fun checkDraw(): Boolean{
+            //todo, will only check for a completely filled board, not for a board with no possible moves
+            for (i in 0 until colums){
+                if (board[i] == ZERO){
+                    return false
+                }
+            }
+            return true
         }
         for (cell in board.indices){
             if (board[cell] != ZERO){
@@ -150,6 +174,9 @@ class Board(val rows: Int, val colums: Int){
                 }else if (checkDiagonal(cell)){
                     println("diagonal win")
                     return true
+                }else if (checkDraw()){
+                    println("draw")
+                    return true
                 }
             }
         }
@@ -157,8 +184,7 @@ class Board(val rows: Int, val colums: Int){
         //this should adapt to varying win conditions. ex 4 in a row. 8 in a row etc
     }
     fun isLegalStartPos(pos: Int): Boolean{
-        // todo, doesnt work when colum is filled fully
-        return pos < colums
+        return legalMoves.contains(pos)
     }
     fun printBoard(){
         board.forEachIndexed { index, byte ->
