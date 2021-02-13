@@ -6,171 +6,170 @@ import kotlin.system.exitProcess
 val YELLOW_PIECE: Byte = 1
 val RED_PIECE: Byte = 2
 val ZERO: Byte = 0
-val WIN_CONDITION = 3 // 4 including the cell looking from
-class ConnectFour {
-    // [0, 0, 0]
-    // [0, 0, 0]
-    // [0, 0, 0]
+val WIN_CONDITION = 3 // actual win condition - 1
+class Game(val board: Board){
     companion object{
         fun initGame(rows: Int, colums: Int): Game{
             //generate win conditions, check if board size is legal/possible. choose turn
             return Game(Board(rows, colums))
         }
     }
-    class Game(val board: Board){
-        //todo, handling of turns is weird
-        var turn: Boolean = false
-        fun pushMove(pos: Int): Boolean{
-            if (board.isLegalStartPos(pos)){
-                board.putMove(pos, if (!turn) YELLOW_PIECE else RED_PIECE)
-                return board.checkForWin(if (!turn) YELLOW_PIECE else RED_PIECE)
-            }else{
-                println("illegal start")
-                return false
-            }
-        }
-        fun startGame(){
-            while (true){
-                board.printBoard()
-                val input = Scanner(System.`in`)
-                val move = input.nextInt()
-                if(pushMove(move)){
-                    println("play again?")
-                    var decision = input.nextInt()
-                    if (decision == 1){
-                        reset()
-                        startGame()
-                    }
-                    exitProcess(0)
-                }else{
-                    turn = !turn
-                }
+    var turn = Random.nextBoolean()
+    var gameID = UUID.randomUUID()
 
+    fun pushMove(pos: Int): Boolean{
+        if (board.isLegalStartPos(pos)){
+            board.putMove(pos, if (!turn) YELLOW_PIECE else RED_PIECE)
+            return board.checkForWin(if (!turn) YELLOW_PIECE else RED_PIECE).also {
+                turn = !turn
             }
-        }
-        fun reset(){
-            turn = true
-            board.clearBoard()
+        }else{
+            println("illegal start")
+            return false
         }
     }
-    class Board(val rows: Int, val colums: Int){
-        private var board: ByteArray = ByteArray(rows * colums)
-        private val LAST_ROW = ((rows * colums) - (colums + 1))
-        private val SQUARES = rows * colums
-        fun overrideBoard(newBoard: ByteArray){
-            board = newBoard
-        }
-        fun clearBoard(){
-            for (cell in board.indices){
-                board[cell] = ZERO
-            }
-        }
-
-        fun putMove(droppingFrom: Int, color: Byte){
-            if (droppingFrom > colums){
-                return
+    fun startGame(){
+        while (true){
+            board.printBoard()
+            val input = Scanner(System.`in`)
+            val move = input.nextInt()
+            if(pushMove(move)){
+                println("play again?")
+                var decision = input.nextInt()
+                if (decision == 1){
+                    reset()
+                    startGame()
+                }
+                exitProcess(0)
             }else{
-                for (posistion in droppingFrom..SQUARES step colums){
-                    if (board[posistion] == YELLOW_PIECE || board[posistion] == RED_PIECE){
-                        if ((posistion - colums) < 0) return
+//                turn = !turn
+            }
+
+        }
+    }
+    private fun reset(){
+        Random.nextBoolean()
+        board.clearBoard()
+    }
+}
+class Board(val rows: Int, val colums: Int){
+    private var board: ByteArray = ByteArray(rows * colums)
+    private val LAST_ROW = ((rows * colums) - (colums + 1))
+    private val SQUARES = rows * colums
+    fun overrideBoard(newBoard: ByteArray){
+        board = newBoard
+    }
+    fun clearBoard(){
+        for (cell in board.indices){
+            board[cell] = ZERO
+        }
+    }
+
+    fun putMove(droppingFrom: Int, color: Byte){
+        if (droppingFrom > colums){
+            return
+        }else{
+            for (posistion in droppingFrom..SQUARES step colums){
+                if (board[posistion] == YELLOW_PIECE || board[posistion] == RED_PIECE){
+                    if ((posistion - colums) < 0) return
+                    board[posistion - colums] = color
+                    return
+                }else if (posistion > LAST_ROW){
+                    if (posistion == SQUARES){ // catches startPos = 0
                         board[posistion - colums] = color
                         return
-                    }else if (posistion > LAST_ROW){
-                        if (posistion == SQUARES){ // catches startPos = 0
-                            board[posistion - colums] = color
-                            return
-                        }
-                        board[posistion] = color
-                        return
                     }
+                    board[posistion] = color
+                    return
                 }
             }
         }
-        private fun getRow(cell: Int): Int{
-            return ((cell/ colums) + 1) * colums - 1
+    }
+    private fun getRow(cell: Int): Int{
+        return ((cell/ colums) + 1) * colums - 1
+    }
+    private fun getSum(cells:List<Int>): Int{
+        var sum = 0
+        for (cell in cells){
+            if (board[cell] == ZERO) return -1 //todo, check if cell == opposiing color
+            sum += board[cell]
         }
-        private fun getSum(cells:List<Int>): Int{
-            var sum = 0
-            for (cell in cells){
-                if (board[cell] == ZERO) return -1 //todo, check if cell == opposiing color
-                sum += board[cell]
-            }
-            return sum
-        }
-        private fun checkSum(sum: Int, color: Byte): Boolean {
-            return if (color == YELLOW_PIECE) sum == ((WIN_CONDITION + 1) * YELLOW_PIECE) else sum == ((WIN_CONDITION + 1) * RED_PIECE)
-        }
+        return sum
+    }
+    private fun checkSum(sum: Int, color: Byte): Boolean {
+        return if (color == YELLOW_PIECE) sum == ((WIN_CONDITION + 1) * YELLOW_PIECE) else sum == ((WIN_CONDITION + 1) * RED_PIECE)
+    }
 
-        fun checkForWin(color: Byte): Boolean {
-            printBoard()
-            fun checkHorz(cell: Int): Boolean{
-                if (cell + WIN_CONDITION <= getRow(cell)){
-                    if(checkSum(getSum((cell..cell + WIN_CONDITION).toList()), color)) return true
-                }
-                if (cell - WIN_CONDITION > getRow(cell) - colums){
-                    if(checkSum(getSum(((cell downTo cell - WIN_CONDITION).toList())), color)) return true
-                }
-                return false
+    fun checkForWin(color: Byte): Boolean {
+        printBoard()
+        fun checkHorz(cell: Int): Boolean{
+            if (cell + WIN_CONDITION <= getRow(cell)){
+                if(checkSum(getSum((cell..cell + WIN_CONDITION).toList()), color)) return true
             }
-            fun checkVert(cell: Int): Boolean{
-                if (cell + (colums * WIN_CONDITION) < SQUARES){
-                    if(checkSum(getSum((cell..(cell + WIN_CONDITION * colums) step colums).toList()), color)) return true
-                }
-                if (cell - (colums * WIN_CONDITION) >= 0){
-                    if(checkSum(getSum((cell downTo (cell - WIN_CONDITION * colums) step colums).toList()), color)) return true
-                }
-                return false
+            if (cell - WIN_CONDITION > getRow(cell) - colums){
+                if(checkSum(getSum(((cell downTo cell - WIN_CONDITION).toList())), color)) return true
             }
-            fun checkDiagonal(cell: Int): Boolean{
-                //check if at leat two cells in any diagonal direction
+            return false
+        }
+        fun checkVert(cell: Int): Boolean{
+            if (cell + (colums * WIN_CONDITION) < SQUARES){
+                if(checkSum(getSum((cell..(cell + WIN_CONDITION * colums) step colums).toList()), color)) return true
+            }
+            if (cell - (colums * WIN_CONDITION) >= 0){
+                if(checkSum(getSum((cell downTo (cell - WIN_CONDITION * colums) step colums).toList()), color)) return true
+            }
+            return false
+        }
+        fun checkDiagonal(cell: Int): Boolean{
+            //check if at leat two cells in any diagonal direction
 //                if (cell )
-                if (cell < SQUARES / 2) {
-                    if (cell + WIN_CONDITION <= getRow(cell)) {
-                        //digaonally down to the right
-                        if(checkSum(getSum((cell..cell + (WIN_CONDITION * colums + WIN_CONDITION) step colums + 1).toList()), color)){
-                            return true
-                        }
-                    }
-                    if (cell - WIN_CONDITION >= getRow(cell) - colums) {
-                        println(getSum((cell..cell + (WIN_CONDITION * colums - WIN_CONDITION) step colums - 1).toList()))
-                        if(checkSum(getSum((cell..cell + (WIN_CONDITION * colums - WIN_CONDITION) step colums - 1).toList()), color)){
-                            return true
-                        }
+            if (cell < SQUARES / 2) {
+                if (cell + WIN_CONDITION <= getRow(cell)) {
+                    //digaonally down to the right
+                    if(checkSum(getSum((cell..cell + (WIN_CONDITION * colums + WIN_CONDITION) step colums + 1).toList()), color)){
+                        return true
                     }
                 }
-                return false
-            }
-            for (cell in board.indices){
-                if (board[cell] != ZERO){
-                    if (checkHorz(cell)){
-                        println("horizontal Win")
-                        return true
-                    }else if (checkVert(cell)){
-                        println("vertical win")
-                        return true
-                    }else if (checkDiagonal(cell)){
-                        println("diagonal win")
+                if (cell - WIN_CONDITION >= getRow(cell) - colums) {
+                    println(getSum((cell..cell + (WIN_CONDITION * colums - WIN_CONDITION) step colums - 1).toList()))
+                    if(checkSum(getSum((cell..cell + (WIN_CONDITION * colums - WIN_CONDITION) step colums - 1).toList()), color)){
                         return true
                     }
                 }
             }
             return false
-            //this should adapt to varying win conditions. ex 4 in a row. 8 in a row etc
         }
-        fun isLegalStartPos(pos: Int): Boolean{
-            return pos < colums
-        }
-        fun printBoard(){
-            board.forEachIndexed { index, byte ->
-                if (index % colums == 0){
-                    print("\n " + byte)
-                }else{
-                    print(" ")
-                    print(byte)
+        for (cell in board.indices){
+            if (board[cell] != ZERO){
+                if (checkHorz(cell)){
+                    println("horizontal Win")
+                    return true
+                }else if (checkVert(cell)){
+                    println("vertical win")
+                    return true
+                }else if (checkDiagonal(cell)){
+                    println("diagonal win")
+                    return true
                 }
             }
-            println("\n-----------------------------")
         }
+        return false
+        //this should adapt to varying win conditions. ex 4 in a row. 8 in a row etc
+    }
+    fun isLegalStartPos(pos: Int): Boolean{
+        // todo, doesnt work when colum is filled fully
+        return pos < colums
+    }
+    fun printBoard(){
+        board.forEachIndexed { index, byte ->
+            if (index % colums == 0){
+                print("\n " + byte)
+            }else{
+                print(" ")
+                print(byte)
+            }
+        }
+        println("\n-----------------------------")
     }
 }
 fun fillHorizontal(range: IntProgression): ArrayList<Int> {
@@ -182,6 +181,6 @@ fun fillHorizontal(range: IntProgression): ArrayList<Int> {
     return commands
 }
 fun main() {
-    val game = ConnectFour.initGame(6, 7)
+    val game = Game.initGame(6, 7)
     game.startGame()
 }
